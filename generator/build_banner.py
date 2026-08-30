@@ -1,4 +1,5 @@
 """Builds dark.svg / light.svg — the animated terminal-window GitHub profile banner."""
+import base64
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from lib import (
@@ -86,6 +87,23 @@ def build_portrait_dot_layer(dot_mask, color, layer_id, seed=7):
         )
     parts.append("</g>")
     return "".join(parts), even
+
+
+def build_portrait_image_layer(image_path, mime, clip_id):
+    """Static raster portrait (a pre-made asset supplied as-is, not generated
+    by the dither pipeline) -- fades in once on load, then sits under the
+    traveler-dot morph like the vector portrait layer does."""
+    with open(image_path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("ascii")
+    href = f"data:{mime};base64,{b64}"
+    return (
+        f'<g opacity="0">'
+        f'<animate attributeName="opacity" values="0;1" dur="1.5s" begin="0.2s" '
+        f'fill="freeze" calcMode="spline" keySplines="0.2 0 0.2 1"/>'
+        f'<image href="{href}" x="{PANEL_X}" y="{PANEL_Y}" width="{PANEL_W}" height="{PANEL_H}" '
+        f'preserveAspectRatio="xMidYMid slice" clip-path="url(#{clip_id})"/>'
+        f'</g>'
+    ), 1.0
 
 
 def build_portrait_wrapper(inner_svg, logo1_centroid):
@@ -243,9 +261,12 @@ def build_titlebar(pal):
     return "".join(parts)
 
 
-def build_svg(theme, dot_mask, logo1, logo2, logo3):
+def build_svg(theme, dot_mask, logo1, logo2, logo3, static_image=None):
     pal = PALETTE[theme]
-    portrait_inner, even = build_portrait_dot_layer(dot_mask, pal["portrait"], f"portrait-dots-{theme}")
+    if static_image:
+        portrait_inner, even = build_portrait_image_layer(static_image, "image/jpeg", f"clip-{theme}")
+    else:
+        portrait_inner, even = build_portrait_dot_layer(dot_mask, pal["portrait"], f"portrait-dots-{theme}")
     logo1_centroid = logo1.mean(axis=0)
     portrait_group = build_portrait_wrapper(portrait_inner, logo1_centroid)
     travelers = build_travelers_layer(logo1, logo2, logo3, pal["chrome"])
@@ -278,8 +299,9 @@ def main():
                                   PANEL_X + PANEL_W * 0.15, PANEL_Y + PANEL_H * 0.15)
     logo1, logo2, logo3 = match_sequence(logo_pts["python"], logo_pts["react"], logo_pts["github"])
 
+    static_images = {"dark": "assets/dark_portrait.jpg"}
     for theme, dots in [("light", dots_full), ("dark", dots_dark)]:
-        svg, even = build_svg(theme, dots, logo1, logo2, logo3)
+        svg, even = build_svg(theme, dots, logo1, logo2, logo3, static_image=static_images.get(theme))
         out_path = f"../{theme}.svg"
         with open(out_path, "w") as f:
             f.write(svg)
