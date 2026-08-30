@@ -89,6 +89,43 @@ def build_portrait_dot_layer(dot_mask, color, layer_id, seed=7):
     return "".join(parts), even
 
 
+def build_particle_field(mask, color, seed=11, n=220, max_radius=70, falloff=22):
+    """Sparkle/dust field scattered around the subject, denser near the
+    silhouette and fading out with distance -- matches the halo effect on
+    the supplied dark-mode reference asset, built here for themes that use
+    the vector dot pipeline instead of a raster portrait."""
+    from scipy import ndimage
+    bg = ~mask
+    dist = ndimage.distance_transform_edt(bg)
+    candidates = np.argwhere((dist > 0) & (dist < max_radius))
+    if len(candidates) == 0:
+        return ""
+    d = dist[candidates[:, 0], candidates[:, 1]]
+    weights = np.exp(-d / falloff)
+    weights /= weights.sum()
+    rng = np.random.default_rng(seed)
+    idx = rng.choice(len(candidates), size=min(n, len(candidates)), replace=False, p=weights)
+    parts = [f'<g fill="{color}">']
+    for i in idx:
+        y, x = candidates[i]
+        dd = d[i]
+        jx = x + rng.uniform(-0.4, 0.4)
+        jy = y + rng.uniform(-0.4, 0.4)
+        px = PANEL_X + jx * CELL
+        py = PANEL_Y + jy * CELL
+        r = max(0.4, 1.6 * np.exp(-dd / (falloff * 1.4)) + rng.uniform(0, 0.3))
+        op = min(0.85, 0.9 * np.exp(-dd / falloff) + 0.05)
+        parts.append(f'<circle cx="{px:.2f}" cy="{py:.2f}" r="{r:.2f}" opacity="{op:.2f}"/>')
+    parts.append("</g>")
+    inner = "".join(parts)
+    return (
+        f'<g opacity="0">'
+        f'<animate attributeName="opacity" values="0;1" dur="2.5s" begin="0.4s" '
+        f'fill="freeze" calcMode="spline" keySplines="0.2 0 0.2 1"/>'
+        f'{inner}</g>'
+    )
+
+
 def build_portrait_image_layer(image_path, mime, clip_id):
     """Static raster portrait (a pre-made asset supplied as-is, not generated
     by the dither pipeline) -- fades in once on load, then sits under the
@@ -261,12 +298,14 @@ def build_titlebar(pal):
     return "".join(parts)
 
 
-def build_svg(theme, dot_mask, logo1, logo2, logo3, static_image=None):
+def build_svg(theme, dot_mask, logo1, logo2, logo3, static_image=None, silhouette_mask=None):
     pal = PALETTE[theme]
     if static_image:
         portrait_inner, even = build_portrait_image_layer(static_image, "image/jpeg", f"clip-{theme}")
     else:
         portrait_inner, even = build_portrait_dot_layer(dot_mask, pal["portrait"], f"portrait-dots-{theme}")
+        if silhouette_mask is not None:
+            portrait_inner = build_particle_field(silhouette_mask, pal["portrait"]) + portrait_inner
     logo1_centroid = logo1.mean(axis=0)
     portrait_group = build_portrait_wrapper(portrait_inner, logo1_centroid)
     travelers = build_travelers_layer(logo1, logo2, logo3, pal["chrome"])
@@ -301,7 +340,9 @@ def main():
 
     static_images = {"dark": "assets/dark_portrait.jpg"}
     for theme, dots in [("light", dots_full), ("dark", dots_dark)]:
-        svg, even = build_svg(theme, dots, logo1, logo2, logo3, static_image=static_images.get(theme))
+        svg, even = build_svg(theme, dots, logo1, logo2, logo3,
+                               static_image=static_images.get(theme),
+                               silhouette_mask=None if static_images.get(theme) else mask_fg)
         out_path = f"../{theme}.svg"
         with open(out_path, "w") as f:
             f.write(svg)
