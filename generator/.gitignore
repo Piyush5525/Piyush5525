@@ -1,3 +1,7 @@
 __pycache__/
 source_photo.png
 preview_*.png
+*.png
+!logos/*.png
+screenshot_svg*.py
+check_*.png
