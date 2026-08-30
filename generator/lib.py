@@ -27,13 +27,20 @@ def to_processed_gray(crop_im):
     return gray
 
 
-def to_processed_gray_inverted(crop_im):
+def to_processed_gray_inverted(crop_im, gamma=2.0):
     """Same tone pipeline as to_processed_gray, but inverted -- for dark mode
     the dither must mark the *lit* pixels as ink (dots draw the lit subject
     on the dark panel), not the dark pixels. Dithering the un-inverted gray
-    for dark mode is what produces a photo-negative look."""
+    for dark mode is what produces a photo-negative look.
+
+    A gamma boost widens what counts as "lit" enough to dither -- without it
+    only the brightest highlights survive, which reads as barely-there once
+    the SVG is scaled down to a real README width instead of a full-size
+    viewport."""
     gray = to_processed_gray(crop_im)
-    return ImageOps.invert(gray)
+    inv = ImageOps.invert(gray)
+    arr = (np.asarray(inv).astype(np.float64) / 255.0) ** gamma * 255.0
+    return Image.fromarray(arr.astype(np.uint8), "L")
 
 
 def foreground_mask(crop_im):
