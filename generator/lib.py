@@ -27,6 +27,15 @@ def to_processed_gray(crop_im):
     return gray
 
 
+def to_processed_gray_inverted(crop_im):
+    """Same tone pipeline as to_processed_gray, but inverted -- for dark mode
+    the dither must mark the *lit* pixels as ink (dots draw the lit subject
+    on the dark panel), not the dark pixels. Dithering the un-inverted gray
+    for dark mode is what produces a photo-negative look."""
+    gray = to_processed_gray(crop_im)
+    return ImageOps.invert(gray)
+
+
 def foreground_mask(crop_im):
     """Segment the subject out of a flat backdrop: threshold on colour distance
     from the estimated background, close, fill holes, keep the largest blob."""

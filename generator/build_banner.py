@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from lib import (
-    load_portrait_crop, to_processed_gray, foreground_mask,
+    load_portrait_crop, to_processed_gray, to_processed_gray_inverted, foreground_mask,
     floyd_steinberg_serpentine, dots_to_runs, runs_to_path_d,
     sample_points_from_glyph, evenness_metric, GRID_W, GRID_H,
 )
@@ -272,7 +272,8 @@ def main():
     gray = to_processed_gray(crop)
     dots_full = floyd_steinberg_serpentine(gray)
     mask_fg = foreground_mask(crop)
-    dots_dark = dots_full & mask_fg
+    gray_inv = to_processed_gray_inverted(crop)
+    dots_dark = floyd_steinberg_serpentine(gray_inv) & mask_fg
 
     logo_pts = build_logo_points(N_TRAVELERS, PANEL_W * 0.7, PANEL_H * 0.7,
                                   PANEL_X + PANEL_W * 0.15, PANEL_Y + PANEL_H * 0.15)
