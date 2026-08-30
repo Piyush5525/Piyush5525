@@ -96,16 +96,25 @@ def dots_to_runs(dot_mask):
     return runs
 
 
-def runs_to_path_d(runs, cell, dot_size, ox=0.0, oy=0.0):
-    """Build a single <path> `d` string drawing each cell in each run as a small
-    square (shape-rendering=crispEdges handles pixel snapping)."""
+def runs_to_path_d(runs, cell, dot_size, ox=0.0, oy=0.0, merge_threshold=2):
+    """Build a single <path> `d` string. Isolated ink cells (run length below
+    merge_threshold) are drawn as small gapped squares -- this is what reads
+    as halftone dot texture in detailed/dithered areas. Longer runs (a solid
+    swath like a dark sweater) are drawn as one edge-to-edge bar instead of
+    one square per cell -- visually equivalent once cells are packed solid,
+    but avoids emitting tens of thousands of near-touching path commands."""
     parts = []
     pad = (cell - dot_size) / 2.0
     for (y, x0, length) in runs:
         py = oy + y * cell + pad
-        for i in range(length):
-            px = ox + (x0 + i) * cell + pad
-            parts.append(f"M{px:.2f} {py:.2f}h{dot_size:.2f}v{dot_size:.2f}h{-dot_size:.2f}Z")
+        if length < merge_threshold:
+            for i in range(length):
+                px = ox + (x0 + i) * cell + pad
+                parts.append(f"M{px:.2f} {py:.2f}h{dot_size:.2f}v{dot_size:.2f}h{-dot_size:.2f}Z")
+        else:
+            px = ox + x0 * cell
+            w = length * cell
+            parts.append(f"M{px:.2f} {oy+y*cell:.2f}h{w:.2f}v{cell:.2f}h{-w:.2f}Z")
     return "".join(parts)
 
 

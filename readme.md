@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Piyush5525/Piyush5525/main/dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Piyush5525/Piyush5525/main/light.svg">
+  <img alt="Piyush Agarwal" src="https://raw.githubusercontent.com/Piyush5525/Piyush5525/main/light.svg">
+</picture>
+
 # 💫 About Me:
 I’m currently a **3rd-year B.Tech student at Manipal University Jaipur**, with a strong interest in **Machine Learning, AI, and creative animated frontend development**.<br><br>I enjoy exploring ideas and turning them into meaningful projects, which is why I’m particularly passionate about **hackathons, innovation, and building unique tech solutions**. I love brainstorming, experimenting with new concepts, and collaborating with people who are excited about creating something impactful.<br><br>Currently, I’m looking for opportunities to:<br><br>* 🔬 Contribute to **research projects** in AI, ML, or related technologies<br>* 💼 Explore **internship opportunities** where I can learn and gain practical experience<br>* 🤝 Collaborate with developers, researchers, designers, and innovators on interesting tech projects<br>* 🚀 Build unique products by combining **Machine Learning with creative and interactive frontend experiences**<br><br>If you're working on something interesting in **Tech, AI, ML, or an innovative project**, I’d love to connect, collaborate, learn, and build something meaningful together!<br><br>**Always open to new ideas, collaborations, hackathons, research, and opportunities.** 🚀<br>
 
